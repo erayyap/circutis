@@ -6,7 +6,7 @@ Stage 2: Inverting amplifier (gain = -5)
 Overall gain: 11 × -5 = -55 (inverting)
 """
 
-from asclib import Circuit, R, V, OpAmp, GND
+from circutis import Circuit, R, V, OpAmp, GND
 
 # Create circuit
 circuit = Circuit(grid_size=16)

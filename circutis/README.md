@@ -1,10 +1,10 @@
-# asclib
+# circutis
 
 A Python library for generating LTspice ASC schematic files with automatic wire routing.
 
 ## Why?
 
-Writing LTspice `.asc` files by hand (or having an LLM generate them) often results in disconnected wires because coordinates must align exactly. **asclib** solves this by:
+Writing LTspice `.asc` files by hand (or having an LLM generate them) often results in disconnected wires because coordinates must align exactly. **circutis** solves this by:
 
 1. **Grid-based placement** — Place components on a logical grid, not pixel coordinates
 2. **Computed pin positions** — Pin coordinates are calculated from component position + rotation
@@ -14,14 +14,14 @@ Writing LTspice `.asc` files by hand (or having an LLM generate them) often resu
 ## Installation
 
 ```bash
-# Copy the asclib folder to your project, or:
-pip install -e /path/to/asclib
+# Copy the circutis folder to your project, or:
+pip install -e /path/to/circutis
 ```
 
 ## Quick Start
 
 ```python
-from asclib import Circuit, R, C, V, GND
+from circutis import Circuit, R, C, V, GND
 
 # Create circuit with 10x10 grid
 c = Circuit(grid_size=10)
@@ -62,7 +62,7 @@ c.save("my_circuit.asc")
 ### Op-Amp
 
 ```python
-from asclib import OpAmp
+from circutis import OpAmp
 
 u1 = c.place(OpAmp("LT1001"), row=2, col=4)
 
@@ -77,7 +77,7 @@ u1.vneg     # V- supply
 ### Ground
 
 ```python
-from asclib import GND
+from circutis import GND
 
 gnd = c.place(GND(), row=4, col=0)
 c.connect(some_pin, gnd)  # Can connect directly to GND component
@@ -130,7 +130,7 @@ c.save("circuit.asc", validate=False)
 ## Example: Inverting Amplifier
 
 ```python
-from asclib import Circuit, R, V, OpAmp, GND
+from circutis import Circuit, R, V, OpAmp, GND
 
 c = Circuit(grid_size=12)
 
@@ -208,8 +208,8 @@ u1.inv, u1.noninv, u1.out, u1.vpos, u1.vneg  # Op-amp
 Subclass `Component` or `TwoTerminal`:
 
 ```python
-from asclib.components import TwoTerminal
-from asclib.constants import PIN_OFFSETS, SYMBOL_NAMES
+from circutis.components import TwoTerminal
+from circutis.constants import PIN_OFFSETS, SYMBOL_NAMES
 
 # Register pin offsets
 PIN_OFFSETS["diode"] = {"anode": (0, 0), "cathode": (0, 64)}

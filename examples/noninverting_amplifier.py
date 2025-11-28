@@ -5,7 +5,7 @@ Gain = 1 + (R2/R1) = 1 + (10k/1k) = 11
 Output voltage = Input voltage × 11
 """
 
-from asclib import Circuit, R, V, OpAmp, GND
+from circutis import Circuit, R, V, OpAmp, GND
 
 # Create circuit with larger grid for better spacing
 c = Circuit(grid_size=14)

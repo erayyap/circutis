@@ -3,7 +3,7 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "asclib"
+name = "circutis"
 version = "0.1.0"
 description = "Python library for generating LTspice ASC schematic files"
 readme = "README.md"
@@ -24,8 +24,8 @@ classifiers = [
 ]
 
 [project.urls]
-Documentation = "https://github.com/yourname/asclib#readme"
-Repository = "https://github.com/yourname/asclib"
+Documentation = "https://github.com/erayyap/circutis#readme"
+Repository = "https://github.com/erayyap/circutis"
 
 [tool.setuptools.packages.find]
-include = ["asclib*"]
+include = ["circutis*"]

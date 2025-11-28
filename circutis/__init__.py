@@ -1,10 +1,10 @@
 """
-asclib - Python library for generating LTspice ASC schematic files.
+circutis - Python library for generating LTspice ASC schematic files.
 
 A grid-based circuit builder with automatic wire routing.
 
 Example:
-    from asclib import Circuit, R, C, V, GND
+    from circutis import Circuit, R, C, V, GND
     
     c = Circuit(grid_size=10)
     
@@ -46,7 +46,7 @@ from .routing import Wire, Router, Connection
 from .validation import CircuitValidator, ValidationIssue, ValidationSeverity
 
 __version__ = "0.1.0"
-__author__ = "asclib"
+__author__ = "erayyap"
 
 __all__ = [
     # Main class

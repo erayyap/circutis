@@ -2,7 +2,7 @@
 RLC Series Circuit - Simple resonant circuit
 """
 
-from asclib import Circuit, R, L, C, V, GND
+from circutis import Circuit, R, L, C, V, GND
 
 def create_rlc_series():
     """Create an RLC series resonant circuit."""

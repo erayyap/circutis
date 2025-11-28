@@ -16,7 +16,7 @@ Circutis is a Python library that lets you build electronic circuits using code 
 ## Quick Start
 
 ```python
-from asclib import Circuit, R, C, V, GND
+from circutis import Circuit, R, C, V, GND
 
 # Create a simple RC low-pass filter
 c = Circuit(grid_size=10)
@@ -141,7 +141,7 @@ Checks for:
 
 ```
 circutis/
-├── asclib/              # Main library code
+├── circutis/            # Main library code
 │   ├── circuit.py       # Circuit class
 │   ├── components.py    # Component definitions
 │   ├── routing.py       # Wire routing

@@ -4,7 +4,7 @@ RLC Bandpass Filter - Dual resonator with coupling
 Two-stage RLC circuit with series input coupling and parallel resonant tanks
 """
 
-from asclib import Circuit, R, L, C, V, GND
+from circutis import Circuit, R, L, C, V, GND
 import math
 
 # Create circuit

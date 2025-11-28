@@ -17,7 +17,7 @@
 
 ## Introduction
 
-**Circutis** (based on asclib) is a Python library for programmatically generating LTspice ASC schematic files. Instead of manually drawing circuits in LTspice, you can write Python code to define your circuits with precise control over component placement, connections, and routing.
+**Circutis** is a Python library for programmatically generating LTspice ASC schematic files. Instead of manually drawing circuits in LTspice, you can write Python code to define your circuits with precise control over component placement, connections, and routing.
 
 ### Why Circutis?
 
@@ -66,7 +66,7 @@ pip install -e .
 Here's a simple RC low-pass filter circuit:
 
 ```python
-from asclib import Circuit, R, C, V, GND
+from circutis import Circuit, R, C, V, GND
 
 # Create a circuit with a 10x10 grid
 c = Circuit(grid_size=10)
@@ -283,7 +283,7 @@ c.connect(r1.p2, gnd)
 ### Step 1: Create Circuit Instance
 
 ```python
-from asclib import Circuit
+from circutis import Circuit
 
 # Default grid (16 units spacing)
 c = Circuit()
@@ -470,7 +470,7 @@ with open("circuit.asc") as f:
 ### Example 1: RC Low-Pass Filter
 
 ```python
-from asclib import Circuit, R, C, V, GND
+from circutis import Circuit, R, C, V, GND
 
 c = Circuit(grid_size=8)
 
