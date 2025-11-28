@@ -1,6 +1,10 @@
-# Circutis
+<div align="center">
+  <img src="logo.png" alt="Circutis Logo" width="300"/>
 
-**Programmatically generate LTspice circuits with Python**
+  # Circutis
+
+  **Programmatically generate LTspice circuits with Python**
+</div>
 
 Circutis is a Python library that lets you build electronic circuits using code instead of manual drawing. Define your circuit components, connections, and layout in Python, then generate LTspice-compatible `.asc` schematic files automatically.
 
