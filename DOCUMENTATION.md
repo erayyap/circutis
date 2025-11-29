@@ -463,6 +463,23 @@ with open("circuit.asc") as f:
     print(f.read())
 ```
 
+### Layout Beautification (`c.beautify()`)
+
+After validation, you can ask Circutis to make small, safe layout tweaks without
+moving unrelated parts. `Circuit.beautify()` currently straightens simple
+L-shaped runs into grounded loads by sliding the load so its pin sits on the
+elbow, reducing visual clutter while preserving all connectivity.
+
+```python
+issues = c.validate()
+if issues:
+    raise SystemExit("Fix validation errors first.")
+
+moved = c.beautify()  # Only re-routes connections touching moved parts
+print(f"Beautified {moved} component(s)")
+c.save("my_circuit.asc", validate=False)  # Already validated above
+```
+
 ---
 
 ## Examples
@@ -503,6 +520,30 @@ See `examples/dual_opamp_cascade.py` for a two-stage cascaded amplifier with ove
 ### Example 5: Simple RLC Series Circuit
 
 See `examples/rlc_circuit.py` for a basic RLC resonant circuit.
+
+### Example 6: Second-Order Type D (RL + RC High-Pass)
+
+`examples/second_order_circuit.py` builds a low-impedance RL Type D stage
+cascaded with a high-resistance RC high-pass. The helper function
+`build_second_order_asc` validates, beautifies, and writes
+`second_order_circuit.asc`:
+
+```python
+from pathlib import Path
+import circutis as circ
+from examples.second_order_circuit import build_second_order_asc
+
+values = {
+    "R7": 47.0,
+    "L": 1.0e-3,
+    "R8": 22.0,
+    "C_hp": 4.7e-9,
+    "R_hp": 10_000.0,
+}
+
+out_path = build_second_order_asc(circ, values, Path("examples"))
+print(out_path)
+```
 
 ---
 
@@ -582,6 +623,7 @@ Circuit(grid_size=16)
 - `connect(pin1, pin2, ...)` - Connect pins with wires
 - `label(pin, name)` - Add a net label to a pin
 - `validate()` - Check circuit for errors
+- `beautify()` - Tidy simple elbows without moving unrelated parts
 - `save(filename, validate=True)` - Save to .asc file
 - `to_asc()` - Get ASC content as string
 

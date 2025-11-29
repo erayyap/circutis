@@ -7,7 +7,7 @@ from .components import Component, GND
 from .pin import Pin
 from .routing import Router, Wire
 from .validation import CircuitValidator, ValidationIssue
-from .constants import DEFAULT_GRID_UNIT, GRID_SPACING, ASC_HEADER
+from .constants import GRID_SPACING, PIN_OFFSETS
 from . import alignment
 
 
@@ -347,6 +347,230 @@ class Circuit:
         pin.label = name
         pin.mark_connected()
         self._labels.append((name, pin.coords))
+
+    def beautify(self, print_report: bool = True) -> int:
+        """
+        Tidy small layout artifacts without moving unrelated components.
+
+        Current pass focuses on the common elbow seen in grounded loads and
+        simple series chains: a two-terminal part whose pin reaches its driver
+        through an L-shaped connection. The part is slid so that pin lands on
+        the elbow point, turning the run into a single straight segment. Only
+        connections touching the moved component are re-routed; all other
+        wires/components stay untouched. Components slide only along the axis
+        perpendicular to their orientation (vertical parts slide horizontally;
+        horizontal parts slide vertically) so orientation remains unchanged.
+
+        Returns:
+            Number of components that were repositioned.
+        """
+
+        def is_two_terminal(comp: Component) -> bool:
+            return hasattr(comp, "p1") and hasattr(comp, "p2")
+
+        def elbow_point(conn: "Connection") -> Optional[Tuple[int, int]]:
+            """Return the bend point for a simple two-segment L connection."""
+            if len(conn.wires) != 2:
+                return None
+
+            first, second = conn.wires
+            shared = None
+            if first.end == second.start:
+                shared = first.end
+            elif second.end == first.start:
+                # Wire list reversed; normalize to keep shared as the elbow
+                first, second = second, first
+                shared = first.end
+            else:
+                return None
+
+            def orientation(wire: Wire) -> Optional[str]:
+                if wire.start[0] == wire.end[0]:
+                    return "v"
+                if wire.start[1] == wire.end[1]:
+                    return "h"
+                return None
+
+            if orientation(first) == orientation(second) or shared is None:
+                return None
+            return shared
+
+        def allowed_single_axis_slide(comp: Component, old_origin: Tuple[int, int], new_origin: Tuple[int, int]) -> bool:
+            """
+            Permit moves only along the axis perpendicular to the component orientation.
+            Vertical parts (rotation 0/180) may slide in X only; horizontal parts
+            (rotation 90/270) may slide in Y only.
+            """
+            dx = new_origin[0] - old_origin[0]
+            dy = new_origin[1] - old_origin[1]
+            if dx == 0 and dy == 0:
+                return False
+
+            is_vertical = comp.rotation % 180 == 0
+            if is_vertical and dy != 0:
+                return False
+            if not is_vertical and dx != 0:
+                return False
+            return True
+
+        def touches_symbol(comp: Component, symbol_type: str) -> bool:
+            """Return True if this component connects to any component of given symbol type."""
+            for conn in self.connections:
+                if conn.pin_a.component is comp:
+                    other_comp = conn.pin_b.component
+                elif conn.pin_b.component is comp:
+                    other_comp = conn.pin_a.component
+                else:
+                    continue
+                if other_comp._symbol_type == symbol_type:
+                    return True
+            return False
+
+        def count_corners_and_wires(pin_a: Pin, pin_b: Pin, blocked_points: set[Tuple[int, int]]) -> Tuple[int, int]:
+            """
+            Compute (corner_count, wire_count) for a connection using a temporary
+            router so we don't mutate the real wiring while evaluating options.
+            """
+            from .routing import Router  # Local import to avoid cycle at module load
+
+            temp_router = Router()
+            wires = temp_router.route(
+                pin_a.coords[0],
+                pin_a.coords[1],
+                pin_b.coords[0],
+                pin_b.coords[1],
+                blocked_points=blocked_points,
+                grid_unit=self.grid_unit,
+            )
+
+            if not wires:
+                return (0, 0)
+
+            corners = 0
+            for i in range(1, len(wires)):
+                if wires[i - 1].end != wires[i].start:
+                    # Unusual discontinuity counts as a corner
+                    corners += 1
+                    continue
+                # Different orientation => a corner
+                if (wires[i - 1].start[0] == wires[i - 1].end[0]) != (wires[i].start[0] == wires[i].end[0]):
+                    corners += 1
+            return (corners, len(wires))
+
+        def find_better_slide(comp: Component, pin: Pin, elbow: Tuple[int, int]) -> Optional[Tuple[int, int]]:
+            """
+            Evaluate both elbows (current and mirrored across the pin) and pick the
+            one that reduces corners/wires without violating axis rules.
+            """
+            origin_candidates = []
+
+            def evaluate(target: Tuple[int, int]) -> None:
+                new_origin = self._origin_for_pin(comp, pin.name, target)
+                if not allowed_single_axis_slide(comp, comp.position, new_origin):
+                    return
+                if self._position_occupied(new_origin, ignore=comp):
+                    return
+                origin_candidates.append(new_origin)
+
+            # Primary elbow
+            evaluate(elbow)
+
+            # Mirror across the pin coordinate to try the opposite direction
+            px, py = pin.coords
+            ex, ey = elbow
+            mirrored = (2 * px - ex, 2 * py - ey)
+            evaluate(mirrored)
+
+            if not origin_candidates:
+                return None
+
+            def score_for_origin(origin: Tuple[int, int]) -> Tuple[int, int]:
+                """Return aggregate (corners, wires) if component were at origin."""
+                orig_pos = comp.position
+                comp.position = origin
+
+                component_conns = [
+                    conn for conn in self.connections
+                    if conn.pin_a.component is comp or conn.pin_b.component is comp
+                ]
+                total_corners = 0
+                total_wires = 0
+                for conn in component_conns:
+                    pin_a = conn.pin_a
+                    pin_b = conn.pin_b
+                    blocked_points = set()
+                    for other_comp in self.components:
+                        for pin in other_comp.pins:
+                            if pin is pin_a or pin is pin_b:
+                                continue
+                            blocked_points.add(pin.coords)
+
+                    c, w = count_corners_and_wires(pin_a, pin_b, blocked_points)
+                    total_corners += c
+                    total_wires += w
+
+                comp.position = orig_pos  # restore
+                return (total_corners, total_wires)
+
+            baseline_score = score_for_origin(comp.position)
+
+            # Choose the candidate that yields the fewest corners, then wires
+            best_origin = None
+            best_score = (10**6, 10**6)  # (corners, wires)
+            for candidate in origin_candidates:
+                score = score_for_origin(candidate)
+                if score < best_score:
+                    best_score = score
+                    best_origin = candidate
+
+            # Only move if it improves over baseline
+            if best_origin and best_score < baseline_score:
+                return best_origin
+            return None
+
+        moved = 0
+        touched_components = set()
+
+        # Pass 1: absorb L-shaped elbows by moving the attached two-terminal part to the corner
+        for conn in list(self.connections):
+            elbow = elbow_point(conn)
+            if not elbow:
+                continue
+
+            for pin in (conn.pin_a, conn.pin_b):
+                comp = pin.component
+                if comp in touched_components:
+                    continue
+                if not is_two_terminal(comp):
+                    continue
+
+                # Avoid moving feedback/bias parts tied into op-amps; keep analog intent intact
+                if touches_symbol(comp, "opamp"):
+                    continue
+
+                other_pin = None
+                if hasattr(comp, "p1") and hasattr(comp, "p2"):
+                    other_pin = comp.p2 if pin.name == "p1" else comp.p1
+
+                if other_pin is None:
+                    continue
+
+                old_pin_coords = {p.name: p.coords for p in comp.pins}
+                new_origin = find_better_slide(comp, pin, elbow)
+                if not new_origin:
+                    continue
+
+                comp.position = new_origin
+                touched_components.add(comp)
+                self._update_labels_for_component(comp, old_pin_coords)
+                self._reroute_component_connections(comp)
+                moved += 1
+                break  # Only move one side of the connection
+
+        if print_report:
+            print(f"Beautify: moved {moved} component(s)")
+
+        return moved
     
     def validate(self, print_report: bool = True) -> List[ValidationIssue]:
         """
@@ -422,3 +646,96 @@ class Circuit:
     
     def __repr__(self):
         return f"Circuit({len(self.components)} components, {len(self.router.wires)} wires)"
+
+    def _origin_for_pin(
+        self,
+        comp: Component,
+        pin_name: str,
+        target: Tuple[int, int],
+        rotation_override: Optional[int] = None
+    ) -> Tuple[int, int]:
+        """Calculate a new origin so a given pin lands at target."""
+        rotation = rotation_override if rotation_override is not None else comp.rotation
+        offsets_for_rotation = PIN_OFFSETS.get(comp._symbol_type, {}).get(rotation, {})
+        if pin_name not in offsets_for_rotation:
+            return comp.position
+
+        ox, oy = offsets_for_rotation[pin_name]
+        mirror = comp.mirror
+        if mirror:
+            ox = -ox
+        return (target[0] - ox, target[1] - oy)
+
+    def _position_occupied(self, position: Tuple[int, int], ignore: Optional[Component] = None) -> bool:
+        """Check if another component already sits at this origin."""
+        for comp in self.components:
+            if comp is ignore:
+                continue
+            if comp.position == position:
+                return True
+        return False
+
+    def _reroute_component_connections(self, component: Component):
+        """
+        Re-route only the connections attached to the given component.
+        
+        This leaves unrelated wiring untouched while still ensuring pins
+        on the moved component reach their peers.
+        """
+        # Collect connections to this component
+        component_conns = [
+            conn for conn in self.connections
+            if conn.pin_a.component is component or conn.pin_b.component is component
+        ]
+
+        # Remove old wires for these connections
+        wires_to_remove = []
+        for conn in component_conns:
+            wires_to_remove.extend(conn.wires)
+        self.router.remove_wires(wires_to_remove)
+
+        # Re-route each connection with updated pin coordinates
+        for conn in component_conns:
+            pin_a = conn.pin_a
+            pin_b = conn.pin_b
+
+            blocked_points = set()
+            for comp in self.components:
+                for pin in comp.pins:
+                    if pin is pin_a or pin is pin_b:
+                        continue
+                    blocked_points.add(pin.coords)
+
+            new_wires = self.router.route(
+                pin_a.coords[0],
+                pin_a.coords[1],
+                pin_b.coords[0],
+                pin_b.coords[1],
+                blocked_points=blocked_points,
+                grid_unit=self.grid_unit,
+            )
+            conn.wires = new_wires
+
+    def _update_labels_for_component(self, component: Component, old_pin_coords: dict[str, Tuple[int, int]]):
+        """
+        Refresh label coordinates for pins belonging to the moved component.
+        
+        Labels are stored as coordinate tuples; when a component moves we need
+        to carry the associated labels to the new pin coordinates to avoid
+        leaving labels floating in space.
+        """
+        if not self._labels:
+            return
+
+        updated_labels = []
+        for name, coords in self._labels:
+            replaced = False
+            for pin in component.pins:
+                if pin.label == name and old_pin_coords.get(pin.name) == coords:
+                    updated_labels.append((name, pin.coords))
+                    replaced = True
+                    break
+            if not replaced:
+                updated_labels.append((name, coords))
+
+        self._labels = updated_labels

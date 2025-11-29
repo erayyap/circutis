@@ -1,6 +1,7 @@
 """
 RLC Series Circuit - Simple resonant circuit
 """
+import os
 
 from circutis import Circuit, R, L, C, V, GND
 
@@ -32,8 +33,13 @@ def create_rlc_series():
     c.label(vin.positive, "VIN")
     c.label(c1.p2, "VOUT")
 
-    c.save("rlc_series.asc")
-    print("✓ Created rlc_series.asc")
+    # Validate, beautify minor elbows, then save next to this script
+    c.validate()
+    c.beautify()
+
+    out_path = os.path.join(os.path.dirname(__file__), "rlc_series.asc")
+    c.save(out_path, validate=False)
+    print(f"✓ Created {out_path}")
     print(f"  Resonant frequency: ~{1/(2*3.14159*((1e-3*1e-6)**0.5)):.0f} Hz")
     return c
 

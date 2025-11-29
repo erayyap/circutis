@@ -154,6 +154,11 @@ class Router:
         start = (x1, y1)
         end = (x2, y2)
 
+        # No routing needed if start and end coincide
+        if start == end:
+            self._occupied_points.add(start)
+            return []
+
         # Direct connection if aligned and unobstructed
         if x1 == x2 or y1 == y2:
             if not self._segment_hits_blocker(start, end, blocked_points):
@@ -227,6 +232,23 @@ class Router:
         for wire in self.wires:
             endpoints.update(wire.endpoints)
         return endpoints
+
+    def remove_wires(self, wires_to_remove: List[Wire]):
+        """
+        Remove specific wire segments from the router.
+
+        Used by layout post-processing (beautify) to re-route only a subset
+        of connections without disturbing the rest of the wiring.
+        """
+        if not wires_to_remove:
+            return
+
+        self.wires = [w for w in self.wires if w not in wires_to_remove]
+
+        # Recompute occupied points from remaining wires
+        self._occupied_points = set()
+        for wire in self.wires:
+            self._occupied_points.update(wire.endpoints)
     
     def clear(self):
         """Clear all routing data."""
