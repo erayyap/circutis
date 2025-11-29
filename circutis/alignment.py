@@ -6,11 +6,8 @@ not so their ORIGINS align to a grid. This module calculates the correct compone
 origin to achieve pin alignment.
 """
 
-from typing import Tuple, Optional, TYPE_CHECKING
+from typing import Tuple
 from .constants import PIN_OFFSETS, DEFAULT_GRID_UNIT
-
-if TYPE_CHECKING:
-    from .components import Component
 
 
 def snap_to_grid(value: int, grid_unit: int = DEFAULT_GRID_UNIT) -> int:

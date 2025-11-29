@@ -5,7 +5,7 @@ Main Circuit class for building and exporting LTspice schematics.
 from typing import List, Optional, Tuple, Union
 from .components import Component, GND
 from .pin import Pin
-from .routing import Router, Wire
+from .routing import Connection, Router, Wire
 from .validation import CircuitValidator, ValidationIssue
 from .constants import GRID_SPACING, PIN_OFFSETS
 from . import alignment
@@ -600,7 +600,7 @@ class Circuit:
         lines = []
         
         # Header
-        lines.append(f"Version 4")
+        lines.append("Version 4")
         lines.append(f"SHEET 1 {self.width} {self.height}")
         
         # Wires first (LTspice convention)

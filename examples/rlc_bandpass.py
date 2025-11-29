@@ -74,12 +74,12 @@ if not issues:
     f0 = 1 / (2 * math.pi * math.sqrt(L_val * C_val))
 
     print("✓ Created rlc_bandpass.asc")
-    print(f"\n  Two-stage coupled RLC bandpass filter")
-    print(f"  - Stage 1: Parallel LC tank (L1=10mH, C1=100nF, R1=1kΩ)")
-    print(f"  - Stage 2: Parallel LC tank (L2=10mH, C2=100nF, R2=1kΩ)")
-    print(f"  - Coupling: C_couple=47nF")
+    print("\n  Two-stage coupled RLC bandpass filter")
+    print("  - Stage 1: Parallel LC tank (L1=10mH, C1=100nF, R1=1kΩ)")
+    print("  - Stage 2: Parallel LC tank (L2=10mH, C2=100nF, R2=1kΩ)")
+    print("  - Coupling: C_couple=47nF")
     print(f"  - Center frequency: ~{f0:.1f} Hz")
-    print(f"  - Source impedance: 50Ω")
-    print(f"  - Load impedance: 1kΩ")
+    print("  - Source impedance: 50Ω")
+    print("  - Load impedance: 1kΩ")
 else:
     print("✗ Circuit validation failed!")

@@ -4,7 +4,6 @@ Handles coordinate calculations with rotation/mirror transformations.
 """
 
 from typing import TYPE_CHECKING, Optional
-import math
 
 if TYPE_CHECKING:
     from .components import Component

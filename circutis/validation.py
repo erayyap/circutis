@@ -8,8 +8,6 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from .circuit import Circuit
-    from .components import Component
-    from .pin import Pin
     from .routing import Wire, Connection
 
 
@@ -167,14 +165,14 @@ class CircuitValidator:
                     if comp._symbol_type == "opamp" and pin.name in ("vpos", "vneg"):
                         self.issues.append(ValidationIssue(
                             severity=ValidationSeverity.WARNING,
-                            message=f"Power pin not connected (may be intentional for ideal op-amp)",
+                            message="Power pin not connected (may be intentional for ideal op-amp)",
                             component=comp.ref,
                             pin=pin.name
                         ))
                     else:
                         self.issues.append(ValidationIssue(
                             severity=ValidationSeverity.ERROR,
-                            message=f"Pin not connected - wire endpoint has no destination",
+                            message="Pin not connected - wire endpoint has no destination",
                             component=comp.ref,
                             pin=pin.name
                         ))
@@ -331,12 +329,12 @@ class CircuitValidator:
         msg = f"Wire crossing detected at position {point} (grid: row={grid_row}, col={grid_col})!\n"
         msg += f"  Connection 1: {conn1.description}\n"
         msg += f"  Connection 2: {conn2.description}\n"
-        msg += f"\n"
-        msg += f"  To fix this crossing:\n"
-        msg += f"\n"
-        msg += f"  Option 1 (RECOMMENDED): Create nodes and route through them\n"
-        msg += f"    This creates explicit junction points to avoid the crossing.\n"
-        msg += f"\n"
+        msg += "\n"
+        msg += "  To fix this crossing:\n"
+        msg += "\n"
+        msg += "  Option 1 (RECOMMENDED): Create nodes and route through them\n"
+        msg += "    This creates explicit junction points to avoid the crossing.\n"
+        msg += "\n"
 
         # Get component and pin references
         comp_a1 = conn1.pin_a.component.ref
@@ -349,31 +347,31 @@ class CircuitValidator:
         comp_b2 = conn2.pin_b.component.ref
         pin_b2 = conn2.pin_b.name
 
-        msg += f"    # Step 1: Create nodes near crossing point (adjust position as needed)\n"
+        msg += "    # Step 1: Create nodes near crossing point (adjust position as needed)\n"
         msg += f"    node1 = c.create_node('NET1', row={grid_row}, col={grid_col})\n"
         msg += f"    node2 = c.create_node('NET2', row={grid_row}, col={grid_col + 1})  # Offset to avoid overlap\n"
-        msg += f"\n"
-        msg += f"    # Step 2: Replace direct connections with node-based routing\n"
+        msg += "\n"
+        msg += "    # Step 2: Replace direct connections with node-based routing\n"
         msg += f"    # Remove: c.connect({comp_a1}.{pin_a1}, {comp_b1}.{pin_b1})\n"
         msg += f"    c.connect({comp_a1}.{pin_a1}, node1)\n"
         msg += f"    c.connect(node1, {comp_b1}.{pin_b1})\n"
-        msg += f"\n"
+        msg += "\n"
         msg += f"    # Remove: c.connect({comp_a2}.{pin_a2}, {comp_b2}.{pin_b2})\n"
         msg += f"    c.connect({comp_a2}.{pin_a2}, node2)\n"
         msg += f"    c.connect(node2, {comp_b2}.{pin_b2})\n"
-        msg += f"\n"
-        msg += f"  Option 2: Use labels for wireless connection (eliminates one wire path)\n"
-        msg += f"    This creates a named net connection without physical wires.\n"
-        msg += f"\n"
-        msg += f"    # Remove one of the connections and use labels instead\n"
-        msg += f"    # For example, to eliminate Connection 2's wires:\n"
+        msg += "\n"
+        msg += "  Option 2: Use labels for wireless connection (eliminates one wire path)\n"
+        msg += "    This creates a named net connection without physical wires.\n"
+        msg += "\n"
+        msg += "    # Remove one of the connections and use labels instead\n"
+        msg += "    # For example, to eliminate Connection 2's wires:\n"
         msg += f"    # Remove: c.connect({comp_a2}.{pin_a2}, {comp_b2}.{pin_b2})\n"
         msg += f"    c.label({comp_a2}.{pin_a2}, 'NET_NAME')\n"
         msg += f"    c.label({comp_b2}.{pin_b2}, 'NET_NAME')\n"
-        msg += f"\n"
-        msg += f"  Option 3: Reposition components to avoid crossing\n"
-        msg += f"    - Move components on the grid so wires don't intersect\n"
-        msg += f"    - Adjust row/col values when placing components"
+        msg += "\n"
+        msg += "  Option 3: Reposition components to avoid crossing\n"
+        msg += "    - Move components on the grid so wires don't intersect\n"
+        msg += "    - Adjust row/col values when placing components"
 
         return msg
 

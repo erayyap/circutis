@@ -172,7 +172,6 @@ class GND(Component):
 
     def to_asc(self) -> str:
         x, y = self.position
-        rot_code = MIRROR_CODES.get((self.rotation, self.mirror), "R0")
         # Ground uses FLAG command in LTspice
         return f"FLAG {x} {y} 0\n"
 
@@ -278,4 +277,4 @@ class OpAmp(Component):
 
 # Aliases for convenience
 V = VoltageSource
-I = CurrentSource
+I = CurrentSource  # noqa: E741
