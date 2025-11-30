@@ -180,7 +180,3 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **Repository**: https://github.com/erayyap/circutis
 - **Issues**: https://github.com/erayyap/circutis/issues
 - **Documentation**: [DOCUMENTATION.md](DOCUMENTATION.md)
-
----
-
-Made with ⚡ by [erayyap](https://github.com/erayyap)
