@@ -79,12 +79,14 @@ class Component:
         x, y = self.position
         rot_code = MIRROR_CODES.get((self.rotation, self.mirror), "R0")
         symbol = SYMBOL_NAMES.get(self._symbol_type, self._symbol_type)
-        
+
         lines = [f"SYMBOL {symbol} {x} {y} {rot_code}"]
         lines.append(f"SYMATTR InstName {self.ref}")
+        lines.append(f"WINDOW 0 36 76 Left 1")
         if self.value:
             lines.append(f"SYMATTR Value {self.value}")
-        
+            lines.append(f"WINDOW 3 36 40 Left 1")
+
         return "\n".join(lines) + "\n"
     
     def __repr__(self):
@@ -266,12 +268,14 @@ class OpAmp(Component):
         x, y = self.position
         rot_code = MIRROR_CODES.get((self.rotation, self.mirror), "R0")
         symbol = SYMBOL_NAMES.get(self._symbol_type, self._symbol_type)
-        
+
         lines = [f"SYMBOL {symbol} {x} {y} {rot_code}"]
         lines.append(f"SYMATTR InstName {self.ref}")
+        lines.append(f"WINDOW 0 36 76 Left 1")
         if self.model and self.model != "opamp":
             lines.append(f"SYMATTR Value {self.model}")
-        
+        lines.append(f"WINDOW 3 36 40 Left 1")
+
         return "\n".join(lines) + "\n"
 
 
